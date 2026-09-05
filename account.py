@@ -13,3 +13,10 @@ class Account:
         else:
             raise ValueError("Deposit amount must be more than 0")
 
+    def withdraw(self, amount):
+        if amount <= 0:
+            raise ValueError("Withdrawal amount must be greater than 0")
+        elif amount > self.balance:
+            raise ValueError("Insufficient funds")
+        else:
+            self.balance -= amount
