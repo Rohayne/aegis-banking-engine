@@ -6,3 +6,10 @@ class Account:
         self.owner = owner
         self.account_number = account_number
         self.balance = balance
+
+    def deposit(self, amount):
+        if amount > 0:
+            self.balance += amount
+        else:
+            raise ValueError("Deposit amount must be more than 0")
+
