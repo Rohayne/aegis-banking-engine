@@ -1,5 +1,7 @@
 # Handling activities between more than one account.
 
+from transaction import Transaction
+
 class PaymentService:
     def transfer(self, source_account, destination_account, amount):
         if amount <= 0:
@@ -9,3 +11,5 @@ class PaymentService:
         else:
             source_account.withdraw(amount)
             destination_account.deposit(amount)
+            transaction = Transaction(source_account, destination_account, amount, "TRANSFER")
+            return transaction # Sends the Transaction object back to whoever called transfer().
