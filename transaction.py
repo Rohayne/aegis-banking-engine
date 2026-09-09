@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 
 class Transaction:
     # __init__ is used when an object needs to be created with state/data that it should remember.
@@ -8,3 +9,4 @@ class Transaction:
         self.amount = amount
         self.transaction_type = transaction_type
         self.transaction_id = str(uuid.uuid4())
+        self.timestamp = datetime.now(timezone.utc)

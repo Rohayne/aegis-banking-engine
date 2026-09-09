@@ -2,6 +2,7 @@ import pytest
 
 from account import Account
 from payment_service import PaymentService
+from datetime import datetime, timezone
 
 # Implementation: Pytest fixture to set up source_account, destination_account and payment_service = PaymentService().
 # Purpose: Pytest fixture creates fresh accounts and a payment service for each test.
@@ -78,3 +79,19 @@ def test_transactions_have_unique_ids(transfer_setup):
     transaction2 = payment_service.transfer(source_account, destination_account, 300)
 
     assert transaction1.transaction_id != transaction2.transaction_id
+
+# Test Case 8: Timestamp on Transactions
+def test_transaction_timestamp(transfer_setup):
+    source_account, destination_account, payment_service = transfer_setup
+    time_before = datetime.now(timezone.utc)
+    transaction = payment_service.transfer(source_account, destination_account, 300)
+    time_after = datetime.now(timezone.utc)
+
+    assert time_before <= transaction.timestamp <= time_after
+
+# Test Case 9: UTC Timestamp on Transactions
+def test_transaction_timestamp_is_utc(transfer_setup):
+    source_account, destination_account, payment_service = transfer_setup
+    transaction = payment_service.transfer(source_account, destination_account, 300)
+
+    assert transaction.timestamp.tzinfo == timezone.utc
