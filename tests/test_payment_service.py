@@ -2,6 +2,7 @@ import pytest
 
 from account import Account
 from payment_service import PaymentService
+from transaction_repository import TransactionRepository
 from datetime import datetime, timezone
 
 # Implementation: Pytest fixture to set up source_account, destination_account and payment_service = PaymentService().
@@ -10,13 +11,14 @@ from datetime import datetime, timezone
 def transfer_setup():
     source_account = Account("Rohayne", "1001", 1000)
     destination_account = Account("Dani", "1002", 500)
-    payment_service = PaymentService()
+    transaction_repository = TransactionRepository()
+    payment_service = PaymentService(transaction_repository)
 
-    return source_account, destination_account, payment_service
+    return source_account, destination_account, payment_service, transaction_repository
 
 # Test Case 1: Positive Transfer
 def test_positive_transfer(transfer_setup):
-    source_account, destination_account, payment_service = transfer_setup
+    source_account, destination_account, payment_service, transaction_repository = transfer_setup
     payment_service.transfer(source_account, destination_account, 300)
 
     assert source_account.balance == 700
@@ -24,7 +26,7 @@ def test_positive_transfer(transfer_setup):
 
 # Test Case 2: Zero Transfer
 def test_zero_transfer(transfer_setup):
-    source_account, destination_account, payment_service = transfer_setup
+    source_account, destination_account, payment_service, transaction_repository = transfer_setup
 
     with pytest.raises(ValueError):
         payment_service.transfer(source_account, destination_account, 0)
@@ -34,7 +36,7 @@ def test_zero_transfer(transfer_setup):
 
 # Test Case 3: Negative Transfer
 def test_negative_transfer(transfer_setup):
-    source_account, destination_account, payment_service = transfer_setup
+    source_account, destination_account, payment_service, transaction_repository = transfer_setup
 
     with pytest.raises(ValueError):
         payment_service.transfer(source_account, destination_account, -100)
@@ -44,7 +46,7 @@ def test_negative_transfer(transfer_setup):
 
 # Test Case 4: Insufficient Funds Transfer
 def test_insufficient_funds_transfer(transfer_setup):
-    source_account, destination_account, payment_service = transfer_setup
+    source_account, destination_account, payment_service, transaction_repository = transfer_setup
 
     with pytest.raises(ValueError):
         payment_service.transfer(source_account, destination_account, 1200)
@@ -54,7 +56,7 @@ def test_insufficient_funds_transfer(transfer_setup):
 
 # Test Case 5: Full Balance Transfer
 def test_full_balance_transfer(transfer_setup):
-    source_account, destination_account, payment_service = transfer_setup
+    source_account, destination_account, payment_service, transaction_repository = transfer_setup
     payment_service.transfer(source_account, destination_account, 1000)
 
     assert source_account.balance == 0
@@ -62,7 +64,7 @@ def test_full_balance_transfer(transfer_setup):
 
 # Test Case 6: Returned Transaction
 def test_return_transaction_transfer(transfer_setup):
-    source_account, destination_account, payment_service = transfer_setup
+    source_account, destination_account, payment_service, transaction_repository = transfer_setup
     transaction = payment_service.transfer(source_account, destination_account, 300)
 
     assert transaction.source_account is source_account
@@ -73,7 +75,7 @@ def test_return_transaction_transfer(transfer_setup):
 
 # Test Case 7: Two transactions should generate unique Transaction IDs
 def test_transactions_have_unique_ids(transfer_setup):
-    source_account, destination_account, payment_service = transfer_setup
+    source_account, destination_account, payment_service, transaction_repository = transfer_setup
 
     transaction1 = payment_service.transfer(source_account, destination_account, 300)
     transaction2 = payment_service.transfer(source_account, destination_account, 300)
@@ -82,7 +84,7 @@ def test_transactions_have_unique_ids(transfer_setup):
 
 # Test Case 8: Timestamp on Transactions
 def test_transaction_timestamp(transfer_setup):
-    source_account, destination_account, payment_service = transfer_setup
+    source_account, destination_account, payment_service, transaction_repository = transfer_setup
     time_before = datetime.now(timezone.utc)
     transaction = payment_service.transfer(source_account, destination_account, 300)
     time_after = datetime.now(timezone.utc)
@@ -91,7 +93,23 @@ def test_transaction_timestamp(transfer_setup):
 
 # Test Case 9: UTC Timestamp on Transactions
 def test_transaction_timestamp_is_utc(transfer_setup):
-    source_account, destination_account, payment_service = transfer_setup
+    source_account, destination_account, payment_service, transaction_repository = transfer_setup
     transaction = payment_service.transfer(source_account, destination_account, 300)
 
     assert transaction.timestamp.tzinfo == timezone.utc
+
+# Test Case 10: PaymentService saves successful transactions into the repository automatically
+def test_transaction_saved_into_repository_in_payment_service(transfer_setup):
+    source_account, destination_account, payment_service, transaction_repository = transfer_setup
+    transaction = payment_service.transfer(source_account, destination_account, 300)
+
+    assert transaction in transaction_repository.transactions
+
+# Test Case 11: Check that failed transfer is not stored in the repository
+def test_failed_transfer_not_stored(transfer_setup):
+    source_account, destination_account, payment_service, transaction_repository = transfer_setup
+
+    with pytest.raises(ValueError):
+        payment_service.transfer(source_account, destination_account, 1200)
+
+    assert len(transaction_repository.transactions) == 0
