@@ -10,3 +10,12 @@ class Transaction:
         self.transaction_type = transaction_type
         self.transaction_id = str(uuid.uuid4())
         self.timestamp = datetime.now(timezone.utc)
+
+    def get_direction_for(self, account):
+        if account is self.source_account:
+            return "Outgoing transaction"
+        elif account is self.destination_account:
+                return "Incoming transaction"
+        else:
+            raise ValueError("Account is not involved in this transaction")
+
