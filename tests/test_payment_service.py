@@ -1,8 +1,10 @@
 import pytest
 
+import ledger_repository
 from account import Account
 from payment_service import PaymentService
 from transaction_repository import TransactionRepository
+from ledger_repository import LedgerRepository
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -13,7 +15,8 @@ def transfer_setup():
     source_account = Account("Rohayne", "1001", 1000)
     destination_account = Account("Dani", "1002", 500)
     transaction_repository = TransactionRepository()
-    payment_service = PaymentService(transaction_repository)
+    ledger_repository = LedgerRepository()
+    payment_service = PaymentService(transaction_repository, ledger_repository)
 
     return source_account, destination_account, payment_service, transaction_repository
 
@@ -120,7 +123,8 @@ def test_transfer_precision():
     source_account = Account("Rohayne", "1001", "100.10")
     destination_account = Account("Dani", "1002", "50.20")
     transaction_repository = TransactionRepository()
-    payment_service = PaymentService(transaction_repository)
+    ledger_repository = LedgerRepository()
+    payment_service = PaymentService(transaction_repository, ledger_repository)
 
     transaction = payment_service.transfer(source_account, destination_account, "20.30")
 
@@ -133,7 +137,8 @@ def test_transfer_three_decimals():
     source_account = Account("Rohayne", "1001", "100.00")
     destination_account = Account("Dani", "1002", "50.00")
     transaction_repository = TransactionRepository()
-    payment_service = PaymentService(transaction_repository)
+    ledger_repository = LedgerRepository()
+    payment_service = PaymentService(transaction_repository, ledger_repository)
 
     with pytest.raises(ValueError):
         payment_service.transfer(source_account, destination_account, "10.123")
@@ -141,3 +146,35 @@ def test_transfer_three_decimals():
     assert source_account.balance == Decimal("100.00")
     assert destination_account.balance == Decimal("50.00")
     assert len(transaction_repository.transactions) == 0
+
+# Test Case 14: Successful transfer creates correct ledger entries
+def test_successful_transfer_creates_ledger_entries():
+    source_account = Account("Rohayne", "1001", "100.00")
+    destination_account = Account("Dani", "1002", "50.00")
+    transaction_repository = TransactionRepository()
+    ledger_repository = LedgerRepository()
+    payment_service = PaymentService(transaction_repository, ledger_repository)
+
+    transaction = payment_service.transfer(source_account, destination_account, "20.00")
+
+    assert len(ledger_repository.entries) == 2
+    assert source_account is ledger_repository.entries[0].account
+    assert destination_account is ledger_repository.entries[1].account
+    assert transaction is ledger_repository.entries[0].transaction
+    assert transaction is ledger_repository.entries[1].transaction
+    assert ledger_repository.entries[0].amount == Decimal("-20.00")
+    assert ledger_repository.entries[1].amount == Decimal("20.00")
+    assert ledger_repository.entries[0].amount + ledger_repository.entries[1].amount == Decimal("0.00")
+
+# Test Case 15: A failed transfer creates no ledger entries
+def test_failed_transfer_creates_no_ledger_entries():
+    source_account = Account("Rohayne", "1001", "100.00")
+    destination_account = Account("Dani", "1002", "50.00")
+    transaction_repository = TransactionRepository()
+    ledger_repository = LedgerRepository()
+    payment_service = PaymentService(transaction_repository, ledger_repository)
+
+    with pytest.raises(ValueError):
+        payment_service.transfer(source_account, destination_account, "150.00")
+
+    assert len(ledger_repository.entries) == 0

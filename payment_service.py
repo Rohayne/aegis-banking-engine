@@ -1,11 +1,13 @@
 # Handling activities between more than one account.
 
 from transaction import Transaction
+from ledger_entry import LedgerEntry
 from decimal import Decimal
 
 class PaymentService:
-    def __init__(self, transaction_repository):
+    def __init__(self, transaction_repository, ledger_repository):
         self.transaction_repository = transaction_repository
+        self.ledger_repository = ledger_repository
 
     def transfer(self, source_account, destination_account, amount):
         amount = Decimal(str(amount))
@@ -18,4 +20,9 @@ class PaymentService:
             destination_account.deposit(amount)
             transaction = Transaction(source_account, destination_account, amount, "TRANSFER")
             self.transaction_repository.save(transaction)
+            source_entry = LedgerEntry(source_account, transaction, -amount)
+            destination_entry = LedgerEntry(destination_account, transaction, amount)
+            self.ledger_repository.save(source_entry)
+            self.ledger_repository.save(destination_entry)
             return transaction # Sends the Transaction object back to whoever called transfer().
+
