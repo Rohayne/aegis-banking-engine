@@ -1,12 +1,14 @@
 # Handling activities between more than one account.
 
 from transaction import Transaction
+from decimal import Decimal
 
 class PaymentService:
     def __init__(self, transaction_repository):
         self.transaction_repository = transaction_repository
 
     def transfer(self, source_account, destination_account, amount):
+        amount = Decimal(str(amount))
         if amount <= 0:
             raise ValueError("Transfer amount must be greater than 0")
         elif amount > source_account.balance:

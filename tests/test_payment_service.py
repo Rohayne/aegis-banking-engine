@@ -4,6 +4,7 @@ from account import Account
 from payment_service import PaymentService
 from transaction_repository import TransactionRepository
 from datetime import datetime, timezone
+from decimal import Decimal
 
 # Implementation: Pytest fixture to set up source_account, destination_account and payment_service = PaymentService().
 # Purpose: Pytest fixture creates fresh accounts and a payment service for each test.
@@ -112,4 +113,31 @@ def test_failed_transfer_not_stored(transfer_setup):
     with pytest.raises(ValueError):
         payment_service.transfer(source_account, destination_account, 1200)
 
+    assert len(transaction_repository.transactions) == 0
+
+# Test Case 12: Transfer Precision, with decimals
+def test_transfer_precision():
+    source_account = Account("Rohayne", "1001", "100.10")
+    destination_account = Account("Dani", "1002", "50.20")
+    transaction_repository = TransactionRepository()
+    payment_service = PaymentService(transaction_repository)
+
+    transaction = payment_service.transfer(source_account, destination_account, "20.30")
+
+    assert source_account.balance == Decimal("79.80")
+    assert destination_account.balance == Decimal("70.50")
+    assert transaction.amount == Decimal("20.30")
+
+# Test Case 13: Transfers for amount more than 2 decimal places
+def test_transfer_three_decimals():
+    source_account = Account("Rohayne", "1001", "100.00")
+    destination_account = Account("Dani", "1002", "50.00")
+    transaction_repository = TransactionRepository()
+    payment_service = PaymentService(transaction_repository)
+
+    with pytest.raises(ValueError):
+        payment_service.transfer(source_account, destination_account, "10.123")
+
+    assert source_account.balance == Decimal("100.00")
+    assert destination_account.balance == Decimal("50.00")
     assert len(transaction_repository.transactions) == 0
