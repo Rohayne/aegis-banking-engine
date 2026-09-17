@@ -1,5 +1,12 @@
 # Aegis Banking Engine
 
+![Python](https://img.shields.io/badge/Python-3.14-blue)
+![Tests](https://img.shields.io/badge/tests-37%20passing-brightgreen)
+![Status](https://img.shields.io/badge/status-active%20development-orange)
+
+A Python banking engine designed to model reliable account operations,
+payment processing, transaction recording, and double-entry ledger behaviour.
+
 A Python banking engine designed to model reliable account operations, payment processing, transaction recording, and double-entry ledger behaviour.
 
 Aegis is being developed as a software engineering portfolio project, with an emphasis on clean object-oriented design, financial correctness, validation, and automated testing.
